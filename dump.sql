@@ -40,6 +40,39 @@ LOCK TABLES `category` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `customers`
+--
+
+DROP TABLE IF EXISTS `customers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customers` (
+  `customer_id` int NOT NULL AUTO_INCREMENT,
+  `customer_name` varchar(45) NOT NULL,
+  `customer_address` varchar(1000) NOT NULL,
+  `customer_phone_number` char(11) NOT NULL,
+  `customer_email` varchar(45) NOT NULL,
+  `order_id` int DEFAULT NULL,
+  PRIMARY KEY (`customer_id`),
+  UNIQUE KEY `адрес_заказчика_UNIQUE` (`customer_address`),
+  UNIQUE KEY `емэйл_заказчика_UNIQUE` (`customer_email`),
+  UNIQUE KEY `телефонный_номер_заказчика_UNIQUE` (`customer_phone_number`),
+  UNIQUE KEY `код_заказчика_UNIQUE` (`customer_id`),
+  KEY `order_id_idx` (`order_id`),
+  CONSTRAINT `order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customers`
+--
+
+LOCK TABLES `customers` WRITE;
+/*!40000 ALTER TABLE `customers` DISABLE KEYS */;
+/*!40000 ALTER TABLE `customers` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `orders`
 --
 
@@ -143,4 +176,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-30 18:15:15
+-- Dump completed on 2026-01-30 19:30:21
