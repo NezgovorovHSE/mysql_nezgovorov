@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mydb-container
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Infinitum97
+      MYSQL_DATABASE: mydb
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
