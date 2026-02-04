@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS mydb;
 USE mydb;
--- Устанавливаем настройки
+
 SET FOREIGN_KEY_CHECKS=0;
 SET NAMES utf8mb4;
 
@@ -83,14 +83,100 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 
 SET FOREIGN_KEY_CHECKS=1;
 
--- Тестовые данные
-INSERT IGNORE INTO `category` (`product_category`) VALUES 
-  ('Электроника'),
-  ('Одежда'),
-  ('Книги'),
-  ('Другое');
+-- Триггер для обработки заказа
+DELIMITER //
 
-INSERT IGNORE INTO `customers` (`customer_name`, `customer_address`, `customer_phone_number`, `customer_email`) VALUES
-  ('Тестовый Клиент', 'ул. Примерная, д.1', '79991234567', 'test@example.com');
+CREATE TRIGGER process_order_trigger
+AFTER INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    DECLARE order_discount DECIMAL(4,2);
+    DECLARE total_cost MEDIUMINT UNSIGNED DEFAULT 0;
+    DECLARE product_count INT;
+    DECLARE done BOOLEAN DEFAULT FALSE;
+    
+    DECLARE cur_products CURSOR FOR
+        SELECT 
+            p.product_id,
+            p.stock_status,
+            p.selling_price,
+            oi.product_quantity,
+            oi.fixed_price
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE oi.order_id = NEW.order_id
+        FOR UPDATE;
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    -- Блокируем заказ и все связанные товары
+    SELECT discount INTO order_discount
+    FROM orders 
+    WHERE order_id = NEW.order_id
+    FOR UPDATE;
+    
+    -- Проверяем корректность скидки
+    IF order_discount < 0 OR order_discount > 100 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = CONCAT('Некорректная скидка: ', order_discount, '%');
+    END IF;
+    
+    OPEN cur_products;
+    
+    product_loop: LOOP
+        FETCH cur_products INTO 
+            @product_id, 
+            @stock_status, 
+            @selling_price, 
+            @product_quantity,
+            @fixed_price;
+        
+        IF done THEN
+            LEAVE product_loop;
+        END IF;
+        
+        -- Проверяем наличие товара
+        IF @stock_status < @product_quantity THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = CONCAT(
+                'Недостаточно товара #', @product_id, 
+                '. На складе: ', @stock_status, 
+                ', требуется: ', @product_quantity
+            );
+        END IF;
+        
+        -- Фиксируем цену, если не указана
+        IF @fixed_price IS NULL THEN
+            UPDATE order_items 
+            SET fixed_price = @selling_price
+            WHERE order_id = NEW.order_id 
+            AND product_id = @product_id;
+            SET @fixed_price = @selling_price;
+        END IF;
+        
+        -- Списание товара со склада
+        UPDATE products 
+        SET stock_status = stock_status - @product_quantity
+        WHERE product_id = @product_id;
+        
+        -- Суммируем стоимость
+        SET total_cost = total_cost + (@product_quantity * @fixed_price);
+    END LOOP;
+    
+    CLOSE cur_products;
+    
+    -- Применяем скидку
+    SET total_cost = total_cost * (1 - order_discount / 100);
+    
+    -- Обновляем заказ
+    UPDATE orders 
+    SET 
+        order_cost = total_cost,
+        order_date = IF(order_date = '0000-00-00', CURDATE(), order_date),
+        order_time = IF(order_time = '00:00:00', CURTIME(), order_time)
+    WHERE order_id = NEW.order_id;
+END //
+
+DELIMITER ;
 
 SELECT 'Database initialized successfully' as status;
