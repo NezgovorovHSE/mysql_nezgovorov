@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `customer_email` varchar(45) NOT NULL,
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `емэйл_заказчика_UNIQUE` (`customer_email`),
-  UNIQUE KEY `телефонный_номер_заказчика_UNIQUE` (`customer_phone_number`)
+  UNIQUE KEY `телефонный_номер_заказчика_UNIQUE` (`customer_phone_number`),
+  KEY `idx_customer_name` (`customer_name`)  -- ДОБАВЛЕНО: поиск по имени
 ) ENGINE=InnoDB;
 
 -- Table suppliers
@@ -48,6 +49,9 @@ CREATE TABLE IF NOT EXISTS `products` (
   PRIMARY KEY (`product_id`),
   KEY `supplier_id_idx` (`supplier`),
   KEY `category_id_idx` (`category_id`),
+  KEY `idx_product_name` (`product_name`),                    
+  KEY `idx_selling_price` (`selling_price`),  
+  KEY `idx_stock_status` (`stock_status`),    
   CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_products_supplier` FOREIGN KEY (`supplier`) REFERENCES `suppliers` (`supplier_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
@@ -63,6 +67,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
   PRIMARY KEY (`order_id`),
   KEY `idx_orders_customer` (`customer_id`),
   KEY `idx_orders_date` (`order_date`),
+  KEY `idx_orders_date_customer` (`order_date`, `customer_id`),
+  KEY `idx_order_cost` (`order_cost`),
   CONSTRAINT `fk_orders_customers` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_discount_range` CHECK (((`discount` >= 0) and (`discount` <= 100)))
 ) ENGINE=InnoDB;
@@ -77,6 +83,8 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`order_item_id`),
   KEY `fk_order_items_order_idx` (`order_id`),
   KEY `fk_order_items_product_idx` (`product_id`),
+  KEY `idx_order_product` (`order_id`, `product_id`),    
+  KEY `idx_product_popularity` (`product_id`, `product_quantity`),
   CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_order_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
@@ -92,7 +100,6 @@ FOR EACH ROW
 BEGIN
     DECLARE order_discount DECIMAL(4,2);
     DECLARE total_cost MEDIUMINT UNSIGNED DEFAULT 0;
-    DECLARE product_count INT;
     DECLARE done BOOLEAN DEFAULT FALSE;
     
     DECLARE cur_products CURSOR FOR
