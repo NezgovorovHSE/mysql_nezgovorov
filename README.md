@@ -1,21 +1,21 @@
-Проект базы данных для интернет-магазина (e-commerce). Вся инфраструктура реализована через docker.
+E-commerce Database Project. The entire infrastructure is implemented using Docker.
 
-Реализованы:
-1. база данных: папка docker/mysql
-2. автоматическое развертывание БД через docker compose и хранение данных в виртуальном пространстве volume: папки app/__pycache__ + docker-compose.yaml
-3. программная реализация триггера на Python, в последствии замененная встроенным в базу данных триггером, содержит пометку "old_" в названии: папка app
-4. генерация основных данных и генерация заказов, использующая триггер и существующие данные базы: папка docker/python-app
+Implemented:
+1. Database: docker/mysql folder
+2. Automatic database deployment via Docker Compose and data storage in a virtual volume: app/__pycache__ folders + docker-compose.yaml
+3. Software implementation of a trigger in Python, later replaced by a built-in database trigger (marked with "old_" in the filename): app folder
+4. Generation of master data and order generation using the trigger and existing database data: docker/python-app folder
 
-Дополнительные материалы:
-1. структура проекта, содержит скриншоты схемы базы данных и структуры docker-проекта: папка структура
-2. примеры sql-запросов по наполненной базе данных (скриншоты): папка запросы
-3. тесты производительности на Python, проверяющие скорость обработки массива sql-запросов для базы данных с 2 миллионами записей (код + скриншоты): папка тестирование
+Additional Materials:
+1. Project structure, including screenshots of the database schema and Docker project structure: structure folder
+2. Examples of SQL-queries on the populated database (screenshots): queries folder
+3. Python performance tests checking the processing speed of SQL queries on a database with 2 million records (code + screenshots): testing folder
 
-Предварительные требования: установленные docker и docker compose
+Prerequisites: Docker and Docker Compose installed
 
-Инструкция по развертыванию:
-1. клонируйте репозиторий
-    git clone https://github.com/NezgovorovHSE/mysql_nezgovorov.git
-    cd mysql_nezgovorov
-2. запустите контейнер
-   docker-compose up -d
+Deployment Instructions:
+1. Clone the repository
+       git clone https://github.com/NezgovorovHSE/mysql_nezgovorov.git
+       cd mysql_nezgovorov
+2. Run the container
+        docker-compose up -d
