@@ -77,4 +77,5 @@ class OrderItem(Base):
     
     product = relationship("Product")
 
+
 # Добавь после всех определений классов:
